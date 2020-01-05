@@ -21,62 +21,61 @@
 #[allow(unused_extern_crates)]
 extern crate panic_halt;
 
-use cortex_m;
 use cortex_m_rt::entry;
-use cortex_m_semihosting::hprintln;
 use stm32f4xx_hal as hal;
+use nb::block;
 
-use crate::hal::{prelude::*, stm32};
+use crate::hal::{prelude::*, stm32, serial::Serial, serial::config::Config};
+
+use bitcoin_hashes::{Hash, sha256};
+
+const CHARS: &[u8] = b"0123456789abcdef";
 
 #[entry]
 fn main() -> ! {
-    // prints hello using semihosting
-    hprintln!("Hello, world!").unwrap();
 
-    if let (Some(dp), Some(cp)) = (
-        stm32::Peripherals::take(),
-        cortex_m::peripheral::Peripherals::take(),
-    ){
-        // Set up the LEDs. 
-        // On the F469-Disco they are connected to pins:
-        // LED1 (green):         PG6, 
-        // LED2 (orange):        PD4, 
-        // LED3 (red):           PD5,
-        // LED4 (blue):          PK3,
-        // LED7 (back, green):   PD3
-        let gpiog = dp.GPIOG.split(); // LED 1
-        let gpiod = dp.GPIOD.split(); // LED 2,3,7
-        let gpiok = dp.GPIOK.split(); // LED 4
-        let mut led1 = gpiog.pg6.into_push_pull_output();
-        let mut led2 = gpiod.pd4.into_push_pull_output();
-        let mut led3 = gpiod.pd5.into_push_pull_output();
-        let mut led4 = gpiok.pk3.into_push_pull_output();
-        let mut led7 = gpiod.pd3.into_push_pull_output();
-        let mut _leds = []
+    if let Some(dp) = stm32::Peripherals::take(){
+
+        let gpiob = dp.GPIOB.split(); // UART3
 
         // Set up the system clock. We want to run at 180MHz for this one.
         let rcc = dp.RCC.constrain();
         let clocks = rcc.cfgr.sysclk(180.mhz()).freeze();
 
-        // Create a delay abstraction based on SysTick
-        let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
+        let tx = gpiob.pb10.into_alternate_af7();
+        let rx = gpiob.pb11.into_alternate_af7();
+    
+        let serial = Serial::usart3(
+            dp.USART3, 
+            (tx, rx),
+            Config::default().baudrate(115_200.bps()),
+            clocks,
+        )
+        .unwrap();
+
+        let (mut tx, mut rx) = serial.split();
+
+        // wait for the first character
+        let _byte = block!(rx.read()).unwrap();
+        let input = "The quick brown fox jumps over the lazy dog.\r\n";
+        for c in input.as_bytes().iter() {
+            block!(tx.write(*c)).ok();
+        }
+        let hash = sha256::Hash::hash(&input.as_bytes());
+        // write!(tx, "{:x?}", hash);
+        // let s = format!("{:x?}", hash).unwrap();
+        for b in hash.iter() {
+            let c = CHARS[(*b >> 4) as usize];
+            block!(tx.write(c)).ok();
+            let c = CHARS[(*b & 0xf) as usize];
+            block!(tx.write(c)).ok();
+        }
+        block!(tx.write(b'\r')).ok();
+        block!(tx.write(b'\n')).ok();
 
         loop {
-            // On for 1s, off for 1s.
-            // FIXME: too much of copy-paste...
-            //        implement a struct with iterator
-            led1.set_high().unwrap();
-            led2.set_low().unwrap();
-            led3.set_high().unwrap();
-            led4.set_low().unwrap();
-            led7.set_high().unwrap();
-            delay.delay_ms(1000_u32);
-            led1.set_low().unwrap();
-            led2.set_high().unwrap();
-            led3.set_low().unwrap();
-            led4.set_high().unwrap();
-            led7.set_low().unwrap();
-            delay.delay_ms(1000_u32);
+            let byte = block!(rx.read()).unwrap();
+            block!(tx.write(byte)).ok();
         }
     }
 
