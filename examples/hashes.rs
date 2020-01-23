@@ -1,29 +1,37 @@
-//! Serial interface echo server
-//!
-//! In this example every received byte will be sent back to the sender. You can test this example
-//! with serial terminal emulator like `minicom`.
-
-/* TODO:
- * Implement serial communication and make a simple terminal app that reads lines,
- * parses these lines and toggles corresponding Leds
- * Implement uprintln! macro and figure out how to use fmt::stuff
- */
+//! Test of bitcoin_hashes on the board.
+//! Prints sha256 of a fixed sentence to serial port
 
 #![no_main]
 #![no_std]
 
-#[allow(unused_extern_crates)]
+#![allow(unused_extern_crates)]
 extern crate panic_halt;
 
+// hardware specific
 use cortex_m_rt::entry;
 use stm32f4xx_hal as hal;
 use nb::block;
-
+use core::fmt::Write;
 use crate::hal::{prelude::*, stm32, serial::Serial, serial::config::Config};
 
+// bitcoin stuff
 use bitcoin_hashes::{Hash, sha256};
 
-const CHARS: &[u8] = b"0123456789abcdef";
+// print macros
+macro_rules! uprint {
+    ($tx:expr, $($arg:tt)*) => {
+        $tx.write_fmt(format_args!($($arg)*)).ok()
+    };
+}
+
+macro_rules! uprintln {
+    ($tx:expr, $fmt:expr) => {
+        uprint!($tx, concat!($fmt, "\r\n"))
+    };
+    ($tx:expr, $fmt:expr, $($arg:tt)*) => {
+        uprint!($tx, concat!($fmt, "\r\n"), $($arg)*)
+    };
+}
 
 #[entry]
 fn main() -> ! {
@@ -44,29 +52,23 @@ fn main() -> ! {
             (tx, rx),
             Config::default().baudrate(115_200.bps()),
             clocks,
-        )
-        .unwrap();
+        ).unwrap();
 
         let (mut tx, mut rx) = serial.split();
 
-        // wait for the first character
-        let _byte = block!(rx.read()).unwrap();
-        let input = "The quick brown fox jumps over the lazy dog.\r\n";
-        for c in input.as_bytes().iter() {
-            block!(tx.write(*c)).ok();
-        }
-        let hash = sha256::Hash::hash(&input.as_bytes());
-        // write!(tx, "{:x?}", hash);
-        // let s = format!("{:x?}", hash).unwrap();
-        for b in hash.iter() {
-            let c = CHARS[(*b >> 4) as usize];
-            block!(tx.write(c)).ok();
-            let c = CHARS[(*b & 0xf) as usize];
-            block!(tx.write(c)).ok();
-        }
-        block!(tx.write(b'\r')).ok();
-        block!(tx.write(b'\n')).ok();
+        /* Here where the magic starts. */
 
+        // wait for the first character
+        uprintln!(tx, "\r\nWelcome stranger! Press any key to continue.");
+        let _byte = block!(rx.read()).unwrap();
+
+        let input = "The quick brown fox jumps over the lazy dog.";
+        uprintln!(tx, "\r\nHere we hash: \"{}\"", input);
+
+        let hash = sha256::Hash::hash(&input.as_bytes());
+        uprintln!(tx, "Hash: {:x?}", hash);
+
+        // infinite echo loop
         loop {
             let byte = block!(rx.read()).unwrap();
             block!(tx.write(byte)).ok();
