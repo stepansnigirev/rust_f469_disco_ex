@@ -2,6 +2,8 @@
 
 Learning Rust hard(ware) way...
 
+Clone recursively! There is a submodule :)
+
 To run & debug:
 
 `openocd` in one terminal window (install it if you don't have it)
@@ -21,5 +23,11 @@ Examples for the board:
 - [x] `blinky` - blink with 4 LEDs on the board, 
 - [x] `serialecho` - echo back everything received to serial, 
 - [x] `hashes` - bitcoin_hashes crate, sha256 of a fixed sentence, 
-- [ ] `ecc` - rust-secp256k1 crate, create privkey, derive pubkey, sign and verify a message.
+- [x] `ecc` - rust-secp256k1 crate, create privkey, derive pubkey, sign and verify a message.
 
+TODO:
+
+- [ ] rust-bitcoin demo
+- [ ] rust-wallet demo
+- [ ] display bindings / driver
+- [ ] rust-lightning
