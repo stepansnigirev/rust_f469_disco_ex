@@ -15,27 +15,11 @@ then in gdb:
 // or whatever
 ```
 
-New / working / tested examples for the board: `hello`, `blinky`, `serialecho`, `hashes`.
+Examples for the board:
 
-# Original readme
+- [x] `hello` - hello world to the debugger, 
+- [x] `blinky` - blink with 4 LEDs on the board, 
+- [x] `serialecho` - echo back everything received to serial, 
+- [x] `hashes` - bitcoin_hashes crate, sha256 of a fixed sentence, 
+- [ ] `ecc` - rust-secp256k1 crate, create privkey, derive pubkey, sign and verify a message.
 
-> A template for building applications for ARM Cortex-M microcontrollers
-
-This project is developed and maintained by the [Cortex-M team][team].
-
-## Dependencies
-
-To build embedded programs using this template you'll need:
-
-- Rust 1.31, 1.30-beta, nightly-2018-09-13 or a newer toolchain. e.g. `rustup
-  default beta`
-
-- The `cargo generate` subcommand. [Installation
-  instructions](https://github.com/ashleygwilliams/cargo-generate#installation).
-
-- `rust-std` components (pre-compiled `core` crate) for the ARM Cortex-M
-  targets. Run:
-
-``` console
-$ rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
-```

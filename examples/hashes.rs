@@ -56,11 +56,11 @@ fn main() -> ! {
 
         let (mut tx, mut rx) = serial.split();
 
-        /* Here where the magic starts. */
-
         // wait for the first character
         uprintln!(tx, "\r\nWelcome stranger! Press any key to continue.");
         let _byte = block!(rx.read()).unwrap();
+
+        /* Here where the magic starts. */
 
         let input = "The quick brown fox jumps over the lazy dog.";
         uprintln!(tx, "\r\nHere we hash: \"{}\"", input);

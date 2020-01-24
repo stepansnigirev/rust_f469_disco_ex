@@ -15,7 +15,8 @@ nb = "0.1.2"
 embedded-hal = "0.2.3"
 bitcoin_hashes = { version = "0.7.3", default-features = false }
 # secp256k1 = { version = "0.17.2", default-features = false, features = ['lowmemory'] }
-
+# my fork for now
+secp256k1 = { path="./rust-secp256k1", default-features = false, features = ['lowmemory'] }
 
 # this lets you use `cargo fix`!
 [[bin]]

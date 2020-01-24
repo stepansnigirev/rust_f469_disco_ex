@@ -3,12 +3,6 @@
 //! In this example every received byte will be sent back to the sender. You can test this example
 //! with serial terminal emulator like `minicom`.
 
-/* TODO:
- * Implement serial communication and make a simple terminal app that reads lines,
- * parses these lines and toggles corresponding Leds
- * Implement uprintln! macro and figure out how to use fmt::stuff
- */
-
 #![no_main]
 #![no_std]
 
